@@ -1,4 +1,4 @@
-package internal
+package testo
 
 import (
 	"encoding/json"
