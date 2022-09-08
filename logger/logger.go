@@ -15,7 +15,8 @@ import (
 // Previously, logrus has been used, which was very convenient, but why not try something else?
 
 var (
-	al AppLogger
+	al     AppLogger
+	levels map[string]zerolog.Level
 )
 
 type AppLogger struct {
@@ -27,9 +28,14 @@ func With(l zerolog.Logger) AppLogger {
 }
 
 type LogConfig struct {
-	Level      string
-	Format     string
+	// The default level to use
+	Level string
+	// Format of logs. 'human' or 'json'
+	Format string
+	// Add the caller to the logout
 	WithCaller bool
+	// When using AppLogger.GetLogger("foo"), the loglevel will be set from this map, or fall back to the default-level
+	Levels map[string]string
 }
 
 func convertLevelStr(s string) (zerolog.Level, bool) {
@@ -72,6 +78,16 @@ func InitLogger(cfg LogConfig) AppLogger {
 		l = l.Level(level)
 	}
 	al = AppLogger{l}
+	if len(cfg.Levels) != 0 {
+		levels = make(map[string]zerolog.Level)
+		for k, levelString := range cfg.Levels {
+			level, ok := convertLevelStr(levelString)
+			if !ok {
+				al.Fatal().Str("levelString", levelString).Str("key", k).Msg("invalid levelstring for key")
+			}
+			levels[k] = level
+		}
+	}
 
 	return al
 }
@@ -86,6 +102,13 @@ func GetLoggerWithLevel(label, level string) AppLogger {
 	return l
 }
 func GetLogger(label string) AppLogger {
+	if len(levels) != 0 {
+		if lvl, ok := levels[label]; ok {
+			l := GetLogger(label)
+			l = AppLogger{l.Level(lvl)}
+			return l
+		}
+	}
 	l := al.With().Str("label", label).Logger()
 	return AppLogger{l}
 }
