@@ -3,6 +3,7 @@ package logger
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -36,6 +37,8 @@ type LogConfig struct {
 	WithCaller bool
 	// When using AppLogger.GetLogger("foo"), the loglevel will be set from this map, or fall back to the default-level
 	Levels map[string]string
+	// Optionally provide a writer
+	Writer io.Writer
 }
 
 func convertLevelStr(s string) (zerolog.Level, bool) {
@@ -69,6 +72,9 @@ func InitLogger(cfg LogConfig) AppLogger {
 		l = log.Output(out)
 	default:
 		l = log.Logger
+	}
+	if cfg.Writer != nil {
+		l = log.Output(cfg.Writer)
 	}
 
 	if cfg.WithCaller {
