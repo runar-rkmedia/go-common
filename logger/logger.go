@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/mattn/go-isatty"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -41,6 +42,15 @@ type LogConfig struct {
 	Writer io.Writer
 }
 
+func isInteractive() bool {
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		return true
+	} else if isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+		return true
+	}
+	return false
+}
+
 func convertLevelStr(s string) (zerolog.Level, bool) {
 	switch strings.ToLower(s) {
 	case "panic", "5":
@@ -63,6 +73,11 @@ func convertLevelStr(s string) (zerolog.Level, bool) {
 
 func InitLogger(cfg LogConfig) AppLogger {
 	var l zerolog.Logger
+	if cfg.Format == "" || cfg.Format == "auto" {
+		if isInteractive() {
+			cfg.Format = "human"
+		}
+	}
 	switch cfg.Format {
 	case "human":
 		out := zerolog.ConsoleWriter{Out: os.Stderr}
