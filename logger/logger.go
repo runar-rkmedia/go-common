@@ -42,7 +42,7 @@ type LogConfig struct {
 	Writer io.Writer
 }
 
-func isInteractive() bool {
+func IsInteractiveTTY() bool {
 	if isatty.IsTerminal(os.Stdout.Fd()) {
 		return true
 	} else if isatty.IsCygwinTerminal(os.Stdout.Fd()) {
@@ -74,7 +74,7 @@ func convertLevelStr(s string) (zerolog.Level, bool) {
 func InitLogger(cfg LogConfig) AppLogger {
 	var l zerolog.Logger
 	if cfg.Format == "" || cfg.Format == "auto" {
-		if isInteractive() {
+		if IsInteractiveTTY() {
 			cfg.Format = "human"
 		}
 	}
